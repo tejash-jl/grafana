@@ -1,0 +1,45 @@
+---
+- name: include OS family/distribution specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "../defaults/{{ ansible_os_family | lower }}-{{ ansible_distribution | lower }}_{{ ansible_distribution_version | lower }}.yml"
+    - "../defaults/{{ ansible_os_family | lower }}-{{ ansible_distribution | lower }}.yml"
+    - "../defaults/{{ ansible_os_family | lower }}.yml"
+
+- include: debug.yml
+  when: debug | default(false)
+  tags: debug
+
+- include: validation.yml
+  tags: validation
+
+- name: ensure apt dependencies are installed
+  apt:
+    name="{{ item }}"
+    state=present
+  become: yes
+  when: ansible_distribution | lower == 'debian' and grafana_apt_dependencies is defined
+  with_items: "{{ grafana_apt_dependencies }}"
+
+- name: ensure grafana apt key is present
+  apt_key:
+    url=https://packagecloud.io/gpg.key
+    id=D59097AB
+    state=present
+  become: yes
+  tags: [ apt ]
+
+- name: ensure grafana apt repository is present
+  apt_repository:
+    repo="deb https://packagecloud.io/grafana/stable/{{ ansible_os_family | lower }}/ {{ grafana_apt_distribution }} main"
+    update_cache=yes
+    state=present
+  become: yes
+  tags: [ apt ]
+
+- name: ensure grafana is installed
+  apt:
+    name=grafana
+    state=present
+  become: yes
+  tags: installation
