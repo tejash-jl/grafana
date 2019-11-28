@@ -23,7 +23,7 @@
 
 - name: ensure grafana apt key is present
   apt_key:
-    url=https://packagecloud.io/gpg.key
+    url=https://packages.grafana.com/gpg.key
     id=D59097AB
     state=present
   become: yes
